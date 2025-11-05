@@ -3,40 +3,16 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { TodoItem } from "@/components/todo-item";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useTodos } from "@/contexts/todo-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import type { Todo } from "@/types/todo";
-import { useState } from "react";
 import { FlatList, StatusBar, StyleSheet, View } from "react-native";
 
 export default function HomeScreen() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const { todos, addTodo, toggleTodo, deleteTodo } = useTodos();
   const tintColor = useThemeColor({}, "tint");
-  const backgroundColor = useThemeColor({}, "background");
 
-  const addTodo = (text: string) => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text,
-      completed: false,
-      createdAt: new Date(),
-    };
-    setTodos([newTodo, ...todos]);
-  };
-
-  const toggleTodo = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  const activeTodos = todos.filter((todo) => !todo.completed).length;
-  const completedTodos = todos.length - activeTodos;
+  const activeTodos = todos.filter((todo) => !todo.completed);
+  const completedCount = todos.filter((todo) => todo.completed).length;
 
   return (
     <ThemedView style={styles.container}>
@@ -55,13 +31,15 @@ export default function HomeScreen() {
           {todos.length > 0 && (
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <ThemedText style={styles.statNumber}>{activeTodos}</ThemedText>
+                <ThemedText style={styles.statNumber}>
+                  {activeTodos.length}
+                </ThemedText>
                 <ThemedText style={styles.statLabel}>Active</ThemedText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <ThemedText style={styles.statNumber}>
-                  {completedTodos}
+                  {completedCount}
                 </ThemedText>
                 <ThemedText style={styles.statLabel}>Done</ThemedText>
               </View>
@@ -79,7 +57,7 @@ export default function HomeScreen() {
 
       <AddTodo onAdd={addTodo} />
 
-      {todos.length === 0 ? (
+      {activeTodos.length === 0 ? (
         <View style={styles.emptyState}>
           <IconSymbol name="tray" size={64} color="#9CA3AF" />
           <ThemedText style={styles.emptyText}>No tasks yet</ThemedText>
@@ -89,7 +67,7 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={todos}
+          data={activeTodos}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TodoItem todo={item} onToggle={toggleTodo} onDelete={deleteTodo} />

@@ -16,20 +16,20 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="tasks"
         options={{
-          title: "Home",
+          title: "Tasks",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <IconSymbol size={28} name="list.bullet" color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="completed"
         options={{
-          title: "Explore",
+          title: "Completed",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <IconSymbol size={28} name="checkmark.circle.fill" color={color} />
           ),
         }}
       />

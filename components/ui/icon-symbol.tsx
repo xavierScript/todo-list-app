@@ -26,6 +26,10 @@ const MAPPING = {
   "plus.circle.fill": "add-circle",
   checklist: "checklist",
   tray: "inbox",
+  "checkmark.circle.fill": "check-circle",
+  "checkmark.circle": "check-circle-outline",
+  "arrow.uturn.backward": "undo",
+  "list.bullet": "format-list-bulleted",
 } as IconMapping;
 
 /**
