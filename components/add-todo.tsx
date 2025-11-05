@@ -69,7 +69,7 @@ export function AddTodo({ onAdd }: AddTodoProps) {
             style={[styles.addButton, { backgroundColor: tintColor }]}
             activeOpacity={0.8}
           >
-            <IconSymbol name="arrow.up" size={18} color="white" />
+            <IconSymbol name="checkmark" size={20} color="white" />
           </TouchableOpacity>
         )}
       </View>
