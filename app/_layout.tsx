@@ -11,7 +11,7 @@ import { TodoProvider } from "@/contexts/todo-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const unstable_settings = {
-  anchor: "(tabs)",
+  initialRouteName: "(tabs)",
 };
 
 export default function RootLayout() {
