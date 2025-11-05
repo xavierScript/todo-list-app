@@ -1,51 +1,77 @@
-import { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { ThemedView } from './themed-view';
-import { IconSymbol } from './ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useState } from "react";
+import {
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ThemedView } from "./themed-view";
+import { IconSymbol } from "./ui/icon-symbol";
 
 interface AddTodoProps {
   onAdd: (text: string) => void;
 }
 
 export function AddTodo({ onAdd }: AddTodoProps) {
-  const [text, setText] = useState('');
-  const colorScheme = useColorScheme();
-  const tintColor = useThemeColor({}, 'tint');
-  const backgroundColor = useThemeColor({ light: '#F2F2F7', dark: '#1C1C1E' }, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const placeholderColor = useThemeColor({ light: '#C7C7CC', dark: '#636366' }, 'icon');
+  const [text, setText] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const tintColor = useThemeColor({}, "tint");
+  const backgroundColor = useThemeColor(
+    { light: "#F9FAFB", dark: "#1F2937" },
+    "background"
+  );
+  const textColor = useThemeColor({}, "text");
+  const placeholderColor = useThemeColor(
+    { light: "#9CA3AF", dark: "#6B7280" },
+    "icon"
+  );
+  const borderColor = useThemeColor(
+    { light: "#E5E7EB", dark: "#374151" },
+    "icon"
+  );
 
   const handleAdd = () => {
     if (text.trim()) {
       onAdd(text.trim());
-      setText('');
+      setText("");
     }
   };
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.inputContainer, { backgroundColor }]}>
+      <View
+        style={[
+          styles.inputContainer,
+          { backgroundColor, borderColor: isFocused ? tintColor : borderColor },
+        ]}
+      >
+        <IconSymbol
+          name="plus.circle.fill"
+          size={24}
+          color={placeholderColor}
+        />
         <TextInput
           style={[styles.input, { color: textColor }]}
-          placeholder="Add a new todo..."
+          placeholder="What needs to be done?"
           placeholderTextColor={placeholderColor}
           value={text}
           onChangeText={setText}
           onSubmitEditing={handleAdd}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           returnKeyType="done"
         />
-        <TouchableOpacity
-          onPress={handleAdd}
-          disabled={!text.trim()}
-          style={[
-            styles.addButton,
-            { backgroundColor: text.trim() ? tintColor : placeholderColor },
-          ]}
-          activeOpacity={0.7}>
-          <IconSymbol name="plus" size={20} color="white" />
-        </TouchableOpacity>
+        {text.trim().length > 0 && (
+          <TouchableOpacity
+            onPress={handleAdd}
+            style={[styles.addButton, { backgroundColor: tintColor }]}
+            activeOpacity={0.8}
+          >
+            <IconSymbol name="arrow.up" size={18} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
     </ThemedView>
   );
@@ -53,26 +79,52 @@ export function AddTodo({ onAdd }: AddTodoProps) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    borderWidth: 2,
+    // Shadow for depth
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   input: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    // Shadow for button
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
 });

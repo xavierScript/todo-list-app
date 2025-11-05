@@ -2,12 +2,16 @@ import { AddTodo } from "@/components/add-todo";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { TodoItem } from "@/components/todo-item";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import type { Todo } from "@/types/todo";
 import { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StatusBar, StyleSheet, View } from "react-native";
 
 export default function HomeScreen() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const tintColor = useThemeColor({}, "tint");
+  const backgroundColor = useThemeColor({}, "background");
 
   const addTodo = (text: string) => {
     const newTodo: Todo = {
@@ -32,27 +36,55 @@ export default function HomeScreen() {
   };
 
   const activeTodos = todos.filter((todo) => !todo.completed).length;
+  const completedTodos = todos.length - activeTodos;
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>
-          My Todo List
-        </ThemedText>
-        {todos.length > 0 && (
-          <ThemedText style={styles.counter}>
-            {activeTodos} of {todos.length} active
-          </ThemedText>
-        )}
+      <StatusBar barStyle="light-content" backgroundColor={tintColor} />
+
+      {/* Header with gradient-like background */}
+      <View style={[styles.headerContainer, { backgroundColor: tintColor }]}>
+        <View style={styles.header}>
+          <View style={styles.titleRow}>
+            <IconSymbol name="checklist" size={32} color="white" />
+            <ThemedText type="title" style={styles.title}>
+              My Tasks
+            </ThemedText>
+          </View>
+
+          {todos.length > 0 && (
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>{activeTodos}</ThemedText>
+                <ThemedText style={styles.statLabel}>Active</ThemedText>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>
+                  {completedTodos}
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>Done</ThemedText>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statNumber}>
+                  {todos.length}
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>Total</ThemedText>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
 
       <AddTodo onAdd={addTodo} />
 
       {todos.length === 0 ? (
         <View style={styles.emptyState}>
-          <ThemedText style={styles.emptyText}>No todos yet!</ThemedText>
+          <IconSymbol name="tray" size={64} color="#9CA3AF" />
+          <ThemedText style={styles.emptyText}>No tasks yet</ThemedText>
           <ThemedText style={styles.emptySubtext}>
-            Add your first todo above to get started
+            Tap above to add your first task
           </ThemedText>
         </View>
       ) : (
@@ -63,6 +95,7 @@ export default function HomeScreen() {
             <TodoItem todo={item} onToggle={toggleTodo} onDelete={deleteTodo} />
           )}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </ThemedView>
@@ -73,18 +106,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerContainer: {
+    paddingTop: 50,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+  },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    gap: 8,
+    gap: 16,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
+    color: "white",
   },
-  counter: {
-    fontSize: 14,
-    opacity: 0.6,
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  statItem: {
+    alignItems: "center",
+    gap: 4,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   listContent: {
     paddingBottom: 20,
@@ -94,11 +159,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 40,
-    gap: 8,
+    gap: 12,
   },
   emptyText: {
     fontSize: 20,
     fontWeight: "600",
+    marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
