@@ -1,14 +1,16 @@
 # Todo List App
 
-A simple mobile todo list app built with React Native and Expo.
+A mobile todo list app with task management and completion tracking, built with React Native and Expo.
 
 ## Features
 
 - ✅ Add new todos
 - ✅ Mark todos as complete/incomplete
 - ✅ Delete todos
-- ✅ Track active todos
+- ✅ Separate tabs for active and completed tasks
+- ✅ Restore completed tasks
 - ✅ Dark mode support
+- ✅ Modern, professional UI
 
 ## Setup
 
