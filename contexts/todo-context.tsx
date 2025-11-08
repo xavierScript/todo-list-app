@@ -1,5 +1,12 @@
 import type { Todo } from "@/types/todo";
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface TodoContextType {
   todos: Todo[];
@@ -8,12 +15,54 @@ interface TodoContextType {
   deleteTodo: (id: string) => void;
   restoreTodo: (id: string) => void;
   deleteCompletedTodo: (id: string) => void;
+  isLoading: boolean;
 }
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
+const STORAGE_KEY = "@todos";
 
 export function TodoProvider({ children }: { children: ReactNode }) {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load todos from storage when app starts
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  // Save todos to storage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      saveTodos(todos);
+    }
+  }, [todos, isLoading]);
+
+  const loadTodos = async () => {
+    try {
+      const savedTodos = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedTodos) {
+        const parsedTodos = JSON.parse(savedTodos);
+        // Convert date strings back to Date objects
+        const todosWithDates = parsedTodos.map((todo: any) => ({
+          ...todo,
+          createdAt: new Date(todo.createdAt),
+        }));
+        setTodos(todosWithDates);
+      }
+    } catch (error) {
+      console.error("Failed to load todos:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveTodos = async (todosToSave: Todo[]) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(todosToSave));
+    } catch (error) {
+      console.error("Failed to save todos:", error);
+    }
+  };
 
   const addTodo = (text: string) => {
     const newTodo: Todo = {
@@ -58,6 +107,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         deleteTodo,
         restoreTodo,
         deleteCompletedTodo,
+        isLoading,
       }}
     >
       {children}

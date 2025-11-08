@@ -5,6 +5,7 @@ import { useTodos } from "@/contexts/todo-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { Todo } from "@/types/todo";
 import {
+  ActivityIndicator,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -85,10 +86,21 @@ function CompletedTodoItem({
 }
 
 export default function CompletedScreen() {
-  const { todos, restoreTodo, deleteCompletedTodo } = useTodos();
+  const { todos, restoreTodo, deleteCompletedTodo, isLoading } = useTodos();
   const tintColor = useThemeColor({}, "tint");
 
   const completedTodos = todos.filter((todo) => todo.completed);
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.screenContainer}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <ThemedText style={styles.loadingText}>Loading tasks...</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.screenContainer}>
@@ -224,5 +236,15 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 6,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });

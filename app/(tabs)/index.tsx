@@ -5,11 +5,28 @@ import { TodoItem } from "@/components/todo-item";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTodos } from "@/contexts/todo-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { FlatList, StatusBar, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
-  const { todos, addTodo, toggleTodo, deleteTodo } = useTodos();
+  const { todos, addTodo, toggleTodo, deleteTodo, isLoading } = useTodos();
   const tintColor = useThemeColor({}, "tint");
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tintColor} />
+          <ThemedText style={styles.loadingText}>Loading tasks...</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
 
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedCount = todos.filter((todo) => todo.completed).length;
@@ -148,5 +165,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.6,
     textAlign: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });
