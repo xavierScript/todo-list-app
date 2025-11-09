@@ -3,20 +3,24 @@ import { useState } from "react";
 import {
   Platform,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { ReminderPicker } from "./reminder-picker";
 import { ThemedView } from "./themed-view";
 import { IconSymbol } from "./ui/icon-symbol";
 
 interface AddTodoProps {
-  onAdd: (text: string) => void;
+  onAdd: (text: string, reminder?: Date) => void;
 }
 
 export function AddTodo({ onAdd }: AddTodoProps) {
   const [text, setText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [reminder, setReminder] = useState<Date | undefined>(undefined);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
   const tintColor = useThemeColor({}, "tint");
   const backgroundColor = useThemeColor(
     { light: "#F9FAFB", dark: "#1F2937" },
@@ -34,9 +38,31 @@ export function AddTodo({ onAdd }: AddTodoProps) {
 
   const handleAdd = () => {
     if (text.trim()) {
-      onAdd(text.trim());
+      onAdd(text.trim(), reminder);
       setText("");
+      setReminder(undefined);
     }
+  };
+
+  const formatReminderPreview = (date: Date) => {
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+    const time = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    if (isToday) return `Today, ${time}`;
+    if (isTomorrow) return `Tomorrow, ${time}`;
+    return `${date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })}, ${time}`;
   };
 
   return (
@@ -52,17 +78,60 @@ export function AddTodo({ onAdd }: AddTodoProps) {
           size={24}
           color={placeholderColor}
         />
-        <TextInput
-          style={[styles.input, { color: textColor }]}
-          placeholder="What needs to be done?"
-          placeholderTextColor={placeholderColor}
-          value={text}
-          onChangeText={setText}
-          onSubmitEditing={handleAdd}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          returnKeyType="done"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={[styles.input, { color: textColor }]}
+            placeholder="What needs to be done?"
+            placeholderTextColor={placeholderColor}
+            value={text}
+            onChangeText={setText}
+            onSubmitEditing={handleAdd}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            returnKeyType="done"
+          />
+
+          {/* Reminder Row - Shows when typing */}
+          {text.trim().length > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.inlineReminderButton,
+                reminder && { backgroundColor: `${tintColor}15` },
+              ]}
+              onPress={() => setShowReminderPicker(true)}
+            >
+              <IconSymbol
+                name={reminder ? "bell.fill" : "bell"}
+                size={16}
+                color={reminder ? tintColor : placeholderColor}
+              />
+              <Text
+                style={[
+                  styles.inlineReminderText,
+                  { color: reminder ? tintColor : placeholderColor },
+                ]}
+              >
+                {reminder ? formatReminderPreview(reminder) : "Set Reminder"}
+              </Text>
+              {reminder && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setReminder(undefined);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <IconSymbol
+                    name="xmark.circle.fill"
+                    size={14}
+                    color={tintColor}
+                  />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
         {text.trim().length > 0 && (
           <TouchableOpacity
             onPress={handleAdd}
@@ -73,6 +142,13 @@ export function AddTodo({ onAdd }: AddTodoProps) {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Reminder Picker Modal */}
+      <ReminderPicker
+        visible={showReminderPicker}
+        onClose={() => setShowReminderPicker(false)}
+        onConfirm={(date) => setReminder(date)}
+      />
     </ThemedView>
   );
 }
@@ -103,8 +179,11 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  input: {
+  inputWrapper: {
     flex: 1,
+    gap: 8,
+  },
+  input: {
     fontSize: 16,
     paddingVertical: 4,
   },
@@ -126,5 +205,18 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  inlineReminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  inlineReminderText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

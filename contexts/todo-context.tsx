@@ -1,4 +1,9 @@
 import type { Todo } from "@/types/todo";
+import {
+  cancelNotification,
+  registerForPushNotificationsAsync,
+  scheduleNotification,
+} from "@/utils/notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -10,7 +15,7 @@ import React, {
 
 interface TodoContextType {
   todos: Todo[];
-  addTodo: (text: string) => void;
+  addTodo: (text: string, reminder?: Date) => void;
   toggleTodo: (id: string) => void;
   deleteTodo: (id: string) => void;
   restoreTodo: (id: string) => void;
@@ -28,6 +33,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   // Load todos from storage when app starts
   useEffect(() => {
     loadTodos();
+    registerForPushNotificationsAsync();
   }, []);
 
   // Save todos to storage whenever they change
@@ -46,6 +52,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         const todosWithDates = parsedTodos.map((todo: any) => ({
           ...todo,
           createdAt: new Date(todo.createdAt),
+          reminder: todo.reminder ? new Date(todo.reminder) : undefined,
         }));
         setTodos(todosWithDates);
       }
@@ -64,17 +71,38 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addTodo = (text: string) => {
+  const addTodo = async (text: string, reminder?: Date) => {
     const newTodo: Todo = {
       id: Date.now().toString(),
       text,
       completed: false,
       createdAt: new Date(),
+      reminder,
     };
+
+    // Schedule notification if reminder is set
+    if (reminder) {
+      const notificationId = await scheduleNotification(
+        newTodo.id,
+        text,
+        reminder
+      );
+      if (notificationId) {
+        newTodo.notificationId = notificationId;
+      }
+    }
+
     setTodos([newTodo, ...todos]);
   };
 
-  const toggleTodo = (id: string) => {
+  const toggleTodo = async (id: string) => {
+    const todo = todos.find((t) => t.id === id);
+
+    // Cancel notification when todo is completed
+    if (todo && !todo.completed && todo.notificationId) {
+      await cancelNotification(todo.notificationId);
+    }
+
     setTodos(
       todos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
@@ -82,19 +110,56 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = async (id: string) => {
+    const todo = todos.find((t) => t.id === id);
+
+    // Cancel notification when todo is deleted
+    if (todo?.notificationId) {
+      await cancelNotification(todo.notificationId);
+    }
+
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
-  const restoreTodo = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: false } : todo
-      )
-    );
+  const restoreTodo = async (id: string) => {
+    const todo = todos.find((t) => t.id === id);
+
+    // Reschedule notification if todo had a reminder and it's in the future
+    if (todo?.reminder && todo.reminder > new Date() && !todo.notificationId) {
+      const notificationId = await scheduleNotification(
+        todo.id,
+        todo.text,
+        todo.reminder
+      );
+
+      setTodos(
+        todos.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                completed: false,
+                notificationId: notificationId || undefined,
+              }
+            : t
+        )
+      );
+    } else {
+      setTodos(
+        todos.map((todo) =>
+          todo.id === id ? { ...todo, completed: false } : todo
+        )
+      );
+    }
   };
 
-  const deleteCompletedTodo = (id: string) => {
+  const deleteCompletedTodo = async (id: string) => {
+    const todo = todos.find((t) => t.id === id);
+
+    // Cancel notification if it exists
+    if (todo?.notificationId) {
+      await cancelNotification(todo.notificationId);
+    }
+
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 

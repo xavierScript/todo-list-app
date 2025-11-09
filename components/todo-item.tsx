@@ -1,6 +1,12 @@
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { Todo } from "@/types/todo";
-import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
 import { IconSymbol } from "./ui/icon-symbol";
@@ -22,6 +28,53 @@ export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
     { light: "#EF4444", dark: "#F87171" },
     "text"
   );
+  const iconColor = useThemeColor(
+    { light: "#9CA3AF", dark: "#6B7280" },
+    "icon"
+  );
+
+  // Check if reminder is overdue
+  const isOverdue =
+    todo.reminder && todo.reminder < new Date() && !todo.completed;
+
+  const formatReminder = (date: Date) => {
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    // If overdue
+    if (diffMs < 0) {
+      const overdueMins = Math.abs(diffMins);
+      const overdueHours = Math.abs(diffHours);
+      const overdueDays = Math.abs(diffDays);
+
+      if (overdueDays > 0) return `${overdueDays}d overdue`;
+      if (overdueHours > 0) return `${overdueHours}h overdue`;
+      return `${overdueMins}m overdue`;
+    }
+
+    // If upcoming
+    const isToday = date.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+    const time = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    if (diffMins < 60) return `in ${diffMins}m`;
+    if (isToday) return `Today, ${time}`;
+    if (isTomorrow) return `Tomorrow, ${time}`;
+    return `${date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })}, ${time}`;
+  };
 
   return (
     <View style={styles.cardWrapper}>
@@ -44,15 +97,36 @@ export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
           </View>
         </TouchableOpacity>
 
-        <ThemedText
-          style={[
-            styles.text,
-            todo.completed && styles.completedText,
-            todo.completed && { color: textColor, opacity: 0.5 },
-          ]}
-        >
-          {todo.text}
-        </ThemedText>
+        <View style={styles.contentContainer}>
+          <ThemedText
+            style={[
+              styles.text,
+              todo.completed && styles.completedText,
+              todo.completed && { color: textColor, opacity: 0.5 },
+            ]}
+          >
+            {todo.text}
+          </ThemedText>
+
+          {/* Reminder Display */}
+          {todo.reminder && (
+            <View style={styles.reminderContainer}>
+              <IconSymbol
+                name={isOverdue ? "exclamationmark.circle.fill" : "clock"}
+                size={14}
+                color={isOverdue ? dangerColor : iconColor}
+              />
+              <Text
+                style={[
+                  styles.reminderText,
+                  { color: isOverdue ? dangerColor : iconColor },
+                ]}
+              >
+                {formatReminder(todo.reminder)}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <TouchableOpacity
           onPress={() => onDelete(todo.id)}
@@ -101,13 +175,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  text: {
+  contentContainer: {
     flex: 1,
+    gap: 6,
+  },
+  text: {
     fontSize: 16,
     lineHeight: 22,
   },
   completedText: {
     textDecorationLine: "line-through",
+  },
+  reminderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  reminderText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   deleteButton: {
     padding: 6,

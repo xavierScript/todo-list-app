@@ -16,6 +16,10 @@ import {
 export default function HomeScreen() {
   const { todos, addTodo, toggleTodo, deleteTodo, isLoading } = useTodos();
   const tintColor = useThemeColor({}, "tint");
+  const dangerColor = useThemeColor(
+    { light: "#EF4444", dark: "#F87171" },
+    "text"
+  );
 
   if (isLoading) {
     return (
@@ -30,6 +34,42 @@ export default function HomeScreen() {
 
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedCount = todos.filter((todo) => todo.completed).length;
+
+  // Group and sort todos by priority
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfterTomorrow = new Date(tomorrow);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+  const groupedTodos = {
+    overdue: activeTodos.filter((todo) => todo.reminder && todo.reminder < now),
+    today: activeTodos.filter(
+      (todo) =>
+        todo.reminder && todo.reminder >= today && todo.reminder < tomorrow
+    ),
+    tomorrow: activeTodos.filter(
+      (todo) =>
+        todo.reminder &&
+        todo.reminder >= tomorrow &&
+        todo.reminder < dayAfterTomorrow
+    ),
+    later: activeTodos.filter(
+      (todo) => todo.reminder && todo.reminder >= dayAfterTomorrow
+    ),
+    noReminder: activeTodos.filter((todo) => !todo.reminder),
+  };
+
+  // Sort within each group by reminder time
+  Object.keys(groupedTodos).forEach((key) => {
+    groupedTodos[key as keyof typeof groupedTodos].sort((a, b) => {
+      if (!a.reminder || !b.reminder) return 0;
+      return a.reminder.getTime() - b.reminder.getTime();
+    });
+  });
+
+  const overdueCount = groupedTodos.overdue.length;
 
   return (
     <ThemedView style={styles.container}>
@@ -55,17 +95,22 @@ export default function HomeScreen() {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <ThemedText style={styles.statNumber}>
-                  {completedCount}
+                <ThemedText
+                  style={[
+                    styles.statNumber,
+                    overdueCount > 0 && { color: dangerColor },
+                  ]}
+                >
+                  {overdueCount}
                 </ThemedText>
-                <ThemedText style={styles.statLabel}>Done</ThemedText>
+                <ThemedText style={styles.statLabel}>Overdue</ThemedText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <ThemedText style={styles.statNumber}>
-                  {todos.length}
+                  {completedCount}
                 </ThemedText>
-                <ThemedText style={styles.statLabel}>Total</ThemedText>
+                <ThemedText style={styles.statLabel}>Done</ThemedText>
               </View>
             </View>
           )}
@@ -84,11 +129,118 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={activeTodos}
+          data={[
+            ...groupedTodos.overdue,
+            ...groupedTodos.today,
+            ...groupedTodos.tomorrow,
+            ...groupedTodos.later,
+            ...groupedTodos.noReminder,
+          ]}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TodoItem todo={item} onToggle={toggleTodo} onDelete={deleteTodo} />
-          )}
+          renderItem={({ item, index }) => {
+            // Determine section headers
+            let sectionHeader = null;
+            const firstOverdueIndex = 0;
+            const firstTodayIndex = groupedTodos.overdue.length;
+            const firstTomorrowIndex =
+              firstTodayIndex + groupedTodos.today.length;
+            const firstLaterIndex =
+              firstTomorrowIndex + groupedTodos.tomorrow.length;
+            const firstNoReminderIndex =
+              firstLaterIndex + groupedTodos.later.length;
+
+            if (
+              index === firstOverdueIndex &&
+              groupedTodos.overdue.length > 0
+            ) {
+              sectionHeader = (
+                <View
+                  style={[
+                    styles.sectionHeader,
+                    { backgroundColor: `${dangerColor}15` },
+                  ]}
+                >
+                  <IconSymbol
+                    name="exclamationmark.circle.fill"
+                    size={18}
+                    color={dangerColor}
+                  />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: dangerColor }]}
+                  >
+                    Overdue ({groupedTodos.overdue.length})
+                  </ThemedText>
+                </View>
+              );
+            } else if (
+              index === firstTodayIndex &&
+              groupedTodos.today.length > 0
+            ) {
+              sectionHeader = (
+                <View style={styles.sectionHeader}>
+                  <IconSymbol name="calendar" size={18} color={tintColor} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: tintColor }]}
+                  >
+                    Today ({groupedTodos.today.length})
+                  </ThemedText>
+                </View>
+              );
+            } else if (
+              index === firstTomorrowIndex &&
+              groupedTodos.tomorrow.length > 0
+            ) {
+              sectionHeader = (
+                <View style={styles.sectionHeader}>
+                  <IconSymbol name="calendar" size={18} color={tintColor} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: tintColor }]}
+                  >
+                    Tomorrow ({groupedTodos.tomorrow.length})
+                  </ThemedText>
+                </View>
+              );
+            } else if (
+              index === firstLaterIndex &&
+              groupedTodos.later.length > 0
+            ) {
+              sectionHeader = (
+                <View style={styles.sectionHeader}>
+                  <IconSymbol name="calendar" size={18} color={tintColor} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: tintColor }]}
+                  >
+                    Later ({groupedTodos.later.length})
+                  </ThemedText>
+                </View>
+              );
+            } else if (
+              index === firstNoReminderIndex &&
+              groupedTodos.noReminder.length > 0
+            ) {
+              sectionHeader = (
+                <View style={styles.sectionHeader}>
+                  <IconSymbol name="list.bullet" size={18} color={tintColor} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: tintColor }]}
+                  >
+                    No Reminder ({groupedTodos.noReminder.length})
+                  </ThemedText>
+                </View>
+              );
+            }
+
+            return (
+              <>
+                {sectionHeader}
+                <TodoItem
+                  todo={item}
+                  onToggle={toggleTodo}
+                  onDelete={deleteTodo}
+                />
+              </>
+            );
+          }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -175,5 +327,21 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     opacity: 0.7,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 8,
+    borderRadius: 8,
+    marginHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });
