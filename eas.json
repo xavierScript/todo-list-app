@@ -6,31 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "applicationArchiveName": "TodoApp-development.apk"
-      },
-      "ios": {
-        "applicationArchiveName": "TodoApp-development.ipa"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "applicationArchiveName": "TodoApp-preview.apk"
-      },
-      "ios": {
-        "applicationArchiveName": "TodoApp-preview.ipa"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "android": {
-        "applicationArchiveName": "TodoApp.apk"
-      },
-      "ios": {
-        "applicationArchiveName": "TodoApp.ipa"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
