@@ -30,6 +30,13 @@ const MAPPING = {
   "checkmark.circle": "check-circle-outline",
   "arrow.uturn.backward": "undo",
   "list.bullet": "format-list-bulleted",
+  bell: "notifications-none",
+  "bell.fill": "notifications",
+  clock: "schedule",
+  calendar: "event",
+  "exclamationmark.circle.fill": "error",
+  "xmark.circle.fill": "cancel",
+  "arrow.right": "arrow-forward",
 } as IconMapping;
 
 /**
