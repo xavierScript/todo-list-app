@@ -20,6 +20,7 @@ interface TodoContextType {
   deleteTodo: (id: string) => void;
   restoreTodo: (id: string) => void;
   deleteCompletedTodo: (id: string) => void;
+  updateTodoReminder: (id: string, newReminder?: Date) => void;
   isLoading: boolean;
 }
 
@@ -163,6 +164,36 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
+  const updateTodoReminder = async (id: string, newReminder?: Date) => {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+
+    // Cancel old notification if it exists
+    if (todo.notificationId) {
+      await cancelNotification(todo.notificationId);
+    }
+
+    // Schedule new notification if newReminder is provided
+    let newNotificationId: string | undefined = undefined;
+    if (newReminder) {
+      const notificationId = await scheduleNotification(
+        todo.id,
+        todo.text,
+        newReminder
+      );
+      newNotificationId = notificationId || undefined;
+    }
+
+    // Update todo with new reminder and notificationId
+    setTodos(
+      todos.map((t) =>
+        t.id === id
+          ? { ...t, reminder: newReminder, notificationId: newNotificationId }
+          : t
+      )
+    );
+  };
+
   return (
     <TodoContext.Provider
       value={{
@@ -172,6 +203,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
         deleteTodo,
         restoreTodo,
         deleteCompletedTodo,
+        updateTodoReminder,
         isLoading,
       }}
     >

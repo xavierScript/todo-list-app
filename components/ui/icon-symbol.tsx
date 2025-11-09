@@ -37,6 +37,7 @@ const MAPPING = {
   "exclamationmark.circle.fill": "error",
   "xmark.circle.fill": "cancel",
   "arrow.right": "arrow-forward",
+  pencil: "edit",
 } as IconMapping;
 
 /**

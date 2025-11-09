@@ -1,5 +1,6 @@
 import { useThemeColor } from "@/hooks/use-theme-color";
 import type { Todo } from "@/types/todo";
+import { useState } from "react";
 import {
   Platform,
   StyleSheet,
@@ -7,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ReminderPicker } from "./reminder-picker";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
 import { IconSymbol } from "./ui/icon-symbol";
@@ -15,9 +17,16 @@ interface TodoItemProps {
   todo: Todo;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateReminder: (id: string, newReminder?: Date) => void;
 }
 
-export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+export function TodoItem({
+  todo,
+  onToggle,
+  onDelete,
+  onUpdateReminder,
+}: TodoItemProps) {
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
   const tintColor = useThemeColor({}, "tint");
   const textColor = useThemeColor({}, "text");
   const cardBg = useThemeColor(
@@ -110,7 +119,11 @@ export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
 
           {/* Reminder Display */}
           {todo.reminder && (
-            <View style={styles.reminderContainer}>
+            <TouchableOpacity
+              style={styles.reminderContainer}
+              onPress={() => setShowReminderPicker(true)}
+              activeOpacity={0.7}
+            >
               <IconSymbol
                 name={isOverdue ? "exclamationmark.circle.fill" : "clock"}
                 size={14}
@@ -124,18 +137,47 @@ export function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
               >
                 {formatReminder(todo.reminder)}
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
         </View>
 
-        <TouchableOpacity
-          onPress={() => onDelete(todo.id)}
-          style={styles.deleteButton}
-          activeOpacity={0.6}
-        >
-          <IconSymbol name="trash" size={20} color={dangerColor} />
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          {/* Edit/Add Reminder Button */}
+          {!todo.completed && (
+            <TouchableOpacity
+              onPress={() => setShowReminderPicker(true)}
+              style={styles.editButton}
+              activeOpacity={0.6}
+            >
+              <IconSymbol
+                name={todo.reminder ? "bell.fill" : "bell"}
+                size={18}
+                color={todo.reminder ? tintColor : iconColor}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Delete Button */}
+          <TouchableOpacity
+            onPress={() => onDelete(todo.id)}
+            style={styles.deleteButton}
+            activeOpacity={0.6}
+          >
+            <IconSymbol name="trash" size={18} color={dangerColor} />
+          </TouchableOpacity>
+        </View>
       </ThemedView>
+
+      {/* Reminder Picker Modal */}
+      <ReminderPicker
+        visible={showReminderPicker}
+        onClose={() => setShowReminderPicker(false)}
+        onConfirm={(date) => {
+          onUpdateReminder(todo.id, date);
+          setShowReminderPicker(false);
+        }}
+        initialDate={todo.reminder}
+      />
     </View>
   );
 }
@@ -194,9 +236,17 @@ const styles = StyleSheet.create({
   reminderText: {
     fontSize: 12,
     fontWeight: "500",
+    flex: 1,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  editButton: {
+    padding: 6,
   },
   deleteButton: {
     padding: 6,
-    marginLeft: 4,
   },
 });

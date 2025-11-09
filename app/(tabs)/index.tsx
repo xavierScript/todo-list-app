@@ -14,7 +14,14 @@ import {
 } from "react-native";
 
 export default function HomeScreen() {
-  const { todos, addTodo, toggleTodo, deleteTodo, isLoading } = useTodos();
+  const {
+    todos,
+    addTodo,
+    toggleTodo,
+    deleteTodo,
+    updateTodoReminder,
+    isLoading,
+  } = useTodos();
   const tintColor = useThemeColor({}, "tint");
   const dangerColor = useThemeColor(
     { light: "#EF4444", dark: "#F87171" },
@@ -237,6 +244,7 @@ export default function HomeScreen() {
                   todo={item}
                   onToggle={toggleTodo}
                   onDelete={deleteTodo}
+                  onUpdateReminder={updateTodoReminder}
                 />
               </>
             );

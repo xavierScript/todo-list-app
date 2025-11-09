@@ -15,24 +15,26 @@ interface ReminderPickerProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (date: Date) => void;
+  initialDate?: Date; // Optional initial date for editing
 }
 
 export function ReminderPicker({
   visible,
   onClose,
   onConfirm,
+  initialDate,
 }: ReminderPickerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate || new Date());
   const [mode, setMode] = useState<"date" | "time">("date");
   const [showPicker, setShowPicker] = useState(false);
 
-  // Reset to current time when modal opens
+  // Reset/set to initial date when modal opens
   useEffect(() => {
     if (visible) {
-      setSelectedDate(new Date());
+      setSelectedDate(initialDate || new Date());
       setMode("date");
     }
   }, [visible]);
